@@ -8,7 +8,7 @@ DATA_DIR.mkdir(exist_ok=True)
 # Swap to Postgres for deployment
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", 
-    "postgresql+psycopg2://user:password@localhost/sifsentinel"
+    f"sqlite:///{DATA_DIR}/sifsentinel.db"
 )
 
 # Optional LLM extraction. If neither key is present, the system uses the
