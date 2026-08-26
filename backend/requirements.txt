@@ -1,0 +1,13 @@
+﻿fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+scikit-learn
+numpy
+pandas
+python-multipart
+psycopg2-binary
+pgvector
+sentence-transformers
+python-jose[cryptography]
+passlib[bcrypt]
