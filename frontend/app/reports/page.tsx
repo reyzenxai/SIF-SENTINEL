@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { Card, RiskBadge } from "@/components/ui";
@@ -14,6 +15,7 @@ interface ReportRow {
 }
 
 export default function ReportsPage() {
+  const router = useRouter();
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -22,17 +24,32 @@ export default function ReportsPage() {
   const [riskFilter, setRiskFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
 
+  const [error, setError] = useState<string | null>(null);
+
   const load = useCallback(() => {
     setLoading(true);
+    setError(null);
     const params: Record<string, string> = { size: "40" };
     if (keyword) params.keyword = keyword;
     if (semantic) params.semantic_query = semantic;
     if (riskFilter) params.risk_level = riskFilter;
     if (typeFilter) params.report_type = typeFilter;
-    api.reports(params).then((res) => { setReports(res.reports); setTotal(res.total); }).finally(() => setLoading(false));
+    
+    api.reports(params)
+      .then((res) => { 
+        setReports(res.reports); 
+        setTotal(res.total); 
+      })
+      .catch((err) => {
+        setError("Could not reach the SIF Sentinel API. Is the backend running on :8000?");
+        console.error(err);
+      })
+      .finally(() => setLoading(false));
   }, [keyword, semantic, riskFilter, typeFilter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { 
+    Promise.resolve().then(() => load()); 
+  }, [load]);
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,7 +107,11 @@ export default function ReportsPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          {loading ? (
+          {error ? (
+            <div className="bg-red-50 text-red-600 p-6 flex items-center justify-center">
+              {error}
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
               <Loader2 className="animate-spin" size={16} /> Loading reports…
             </div>
@@ -109,7 +130,7 @@ export default function ReportsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {reports.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => window.location.href = `/reports/${r.id}`}>
+                  <tr key={r.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => router.push(`/reports/${r.id}`)}>
                     <td className="px-4 py-2.5 max-w-[320px] truncate text-slate-800">{r.title}</td>
                     <td className="px-4 py-2.5 text-slate-500">{r.hazard_category || "—"}</td>
                     <td className="px-4 py-2.5 text-slate-500">{r.location}</td>
