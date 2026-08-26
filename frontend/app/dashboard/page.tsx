@@ -1,13 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Navbar } from "@/components/navbar";
-import { Card, KpiCard, SectionHeading, PatternLink } from "@/components/ui";
+import { AppSidebar } from "@/components/AppSidebar";
+import { AppHeader } from "@/components/AppHeader";
+import { KpiCard3D } from "@/components/KpiCards3D";
+import { Heatmap3D } from "@/components/Heatmap3D";
+import { EmergingPatterns } from "@/components/EmergingPatterns";
+import { RiskDiagnostics } from "@/components/RiskDiagnostics";
 import { api } from "@/lib/api";
-import { riskColor, trendLabel } from "@/lib/utils";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
-} from "recharts";
-import { AlertTriangle, TrendingUp, MapPin, Building2, Loader2 } from "lucide-react";
 
 interface Kpis {
   total_reports: number;
@@ -24,13 +23,11 @@ interface RadarPattern {
   id: string; title: string; trend: string; trend_pct: number; sif_score: number; report_count: number;
 }
 interface HeatmapSite { site: string; score: number; count: number; risk_level: string }
-interface HazardBreakdown { hazard_category: string; count: number }
 
 export default function DashboardPage() {
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [radar, setRadar] = useState<RadarPattern[]>([]);
   const [heatmap, setHeatmap] = useState<HeatmapSite[]>([]);
-  const [hazards, setHazards] = useState<HazardBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,10 +36,10 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [k, r, h, hz] = await Promise.all([
-        api.kpis(), api.patternsRadar(), api.heatmap(), api.hazardBreakdown(),
+      const [k, r, h] = await Promise.all([
+        api.kpis(), api.patternsRadar(), api.heatmap(),
       ]);
-      setKpis(k); setRadar(r); setHeatmap(h); setHazards(hz);
+      setKpis(k); setRadar(r); setHeatmap(h);
     } catch (e) {
       setError("Could not reach the SIF Sentinel API. Is the backend running on :8000?");
     } finally {
@@ -63,140 +60,92 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col">
-      <Navbar />
-      <main className="flex-1 max-w-[1400px] w-full mx-auto px-6 py-6">
-        {/* Header + ethics banner */}
-        <div className="mb-5">
-          <div className="flex items-baseline justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-slate-900">Safety Command Center</h1>
-              <p className="text-sm text-slate-500 mt-0.5">From safety reports to preventive action.</p>
-            </div>
-          </div>
-          <div className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            Prototype demonstration uses synthetic/anonymized safety-report data. Production deployment would require authorized OIL data.
-          </div>
-        </div>
-
-        {error && (
-          <Card className="p-6 text-center mb-6">
-            <p className="text-sm text-slate-600">{error}</p>
-          </Card>
-        )}
-
-        {!error && loading && (
-          <div className="flex items-center justify-center py-24 text-slate-400 gap-2">
-            <Loader2 className="animate-spin" size={18} /> Loading safety intelligence…
-          </div>
-        )}
-
-        {!error && !loading && kpis && kpis.total_reports === 0 && (
-          <Card className="p-10 text-center">
-            <p className="text-sm text-slate-600 mb-4">No reports have been ingested yet.</p>
-            <button
-              onClick={handleSeed}
-              disabled={seeding}
-              className="bg-slate-900 text-white text-sm font-medium px-4 py-2 rounded hover:bg-slate-800 disabled:opacity-50"
-            >
-              {seeding ? "Generating & analyzing 1,000 synthetic reports…" : "Load Synthetic Demo Dataset (1,000 reports)"}
-            </button>
-          </Card>
-        )}
-
-        {!error && !loading && kpis && kpis.total_reports > 0 && (
-          <>
-            {/* KPI row */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-              <KpiCard label="Reports Analyzed" value={kpis.total_reports.toLocaleString()} />
-              <KpiCard label="SIF Precursors" value={kpis.sif_precursors.toLocaleString()} sub="High/Critical risk" />
-              <KpiCard label="Emerging Patterns" value={kpis.emerging_patterns} />
-              <KpiCard label="Critical Patterns" value={kpis.critical_patterns} />
-              <KpiCard label="High-Risk Sites" value={kpis.high_risk_sites} />
-              <KpiCard label="Avg SIF Score" value={kpis.avg_sif_score} sub="/ 100" />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              {/* Emerging SIF Radar */}
-              <Card className="lg:col-span-2 p-4">
-                <SectionHeading title="Emerging SIF Radar" />
-                <div className="divide-y divide-slate-100">
-                  {radar.map((p) => {
-                    const trend = trendLabel(p.trend);
-                    const risk = riskColor(p.sif_score >= 80 ? "CRITICAL" : p.sif_score >= 60 ? "HIGH" : p.sif_score >= 35 ? "MODERATE" : "LOW");
-                    return (
-                      <PatternLink key={p.id} id={p.id} className="py-3 px-2 -mx-2 rounded flex items-center justify-between group">
-                        <div className="flex items-center gap-3">
-                          <span className={`w-2 h-2 rounded-full ${risk.dot}`} />
-                          <div>
-                            <div className="text-sm font-medium text-slate-800 group-hover:text-slate-950">{p.title}</div>
-                            <div className="text-xs text-slate-400">{p.report_count} related reports</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs text-slate-500 tabular-nums">SIF {p.sif_score}</span>
-                          <span className={`text-sm font-semibold tabular-nums ${trend.color}`}>
-                            {trend.icon} {Math.abs(p.trend_pct)}%
-                          </span>
-                        </div>
-                      </PatternLink>
-                    );
-                  })}
-                  {radar.length === 0 && <p className="text-sm text-slate-400 py-6 text-center">No patterns discovered yet.</p>}
-                </div>
-              </Card>
-
-              {/* Hazard breakdown */}
-              <Card className="p-4">
-                <SectionHeading title="Hazard Category Breakdown" />
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={hazards} layout="vertical" margin={{ left: 8, right: 16 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <YAxis
-                      type="category"
-                      dataKey="hazard_category"
-                      width={110}
-                      tick={{ fontSize: 11, fill: "#334155" }}
-                    />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6 }} />
-                    <Bar dataKey="count" radius={[0, 3, 3, 0]}>
-                      {hazards.map((_, i) => (
-                        <Cell key={i} fill={["#dc2626", "#ea580c", "#d97706", "#0891b2", "#475569", "#7c3aed", "#059669"][i % 7]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-            </div>
-
-            {/* SIF Heatmap */}
-            <Card className="p-4 mt-5">
-              <SectionHeading title="SIF Heatmap — Site-Level Intelligence" />
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                {heatmap.map((site) => {
-                  const c = riskColor(site.risk_level);
-                  return (
-                    <div key={site.site} className={`rounded-lg border p-3 ${c.bg} ${c.border}`}>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                        <MapPin size={12} /> {site.site}
-                      </div>
-                      <div className={`text-2xl font-semibold tabular-nums ${c.text}`}>{site.score}</div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className={`text-[11px] font-semibold ${c.text}`}>{site.risk_level}</span>
-                        <span className="text-[11px] text-slate-400">{site.count} reports</span>
-                      </div>
-                    </div>
-                  );
-                })}
+    <>
+      <AppSidebar />
+      <div className="pl-72">
+        <AppHeader />
+        
+        <main className="relative pt-16 min-h-screen bg-background">
+          <div className="flex flex-col w-full h-full relative p-container-margin gap-stack-md">
+            
+            {error && (
+              <div className="bg-error-container text-on-error-container p-6 rounded-xl relative z-20">
+                {error}
               </div>
-              <p className="text-[11px] text-slate-400 mt-3 flex items-center gap-1">
-                <AlertTriangle size={11} /> Site-level aggregation from synthetic demo data; not exact geographic coordinates.
-              </p>
-            </Card>
-          </>
-        )}
-      </main>
-    </div>
+            )}
+            
+            {!error && loading && (
+              <div className="flex items-center justify-center py-24 text-on-surface-variant gap-2 relative z-20">
+                <span className="material-symbols-outlined animate-spin">sync</span> Loading safety intelligence…
+              </div>
+            )}
+            
+            {!error && !loading && kpis && kpis.total_reports === 0 && (
+              <div className="bg-surface-container/70 backdrop-blur-xl p-10 rounded-xl text-center relative z-20 shadow-md">
+                <p className="text-[14px] text-on-surface-variant mb-4">No reports have been ingested yet.</p>
+                <button
+                  onClick={handleSeed}
+                  disabled={seeding}
+                  className="bg-primary text-on-primary text-[14px] font-semibold px-6 py-3 rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                >
+                  {seeding ? "Generating & analyzing 1,000 synthetic reports…" : "Load Synthetic Demo Dataset (1,000 reports)"}
+                </button>
+              </div>
+            )}
+            
+            {!error && !loading && kpis && kpis.total_reports > 0 && (
+              <>
+                {/* 3D KPI Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter w-full z-10 perspective-1000">
+                  <KpiCard3D 
+                    title="Active SIF Patterns" 
+                    value={kpis.total_patterns} 
+                    icon="warning" 
+                    colorClass="primary" 
+                    badgeText="LIVE" 
+                    subText={<span className="text-error text-[14px] flex items-center mb-2"><span className="material-symbols-outlined text-[16px] mr-1">trending_up</span>+3</span>}
+                  />
+                  <KpiCard3D 
+                    title="Critical Alerts" 
+                    value={kpis.critical_patterns} 
+                    icon="emergency" 
+                    colorClass="error" 
+                    badgeText="CRITICAL" 
+                    pulseBadge={true}
+                    subText={<span className="text-on-surface-variant text-[14px] mb-2">Requires Action</span>}
+                  />
+                  <KpiCard3D 
+                    title="Reports Processed" 
+                    value={kpis.total_reports.toLocaleString()} 
+                    icon="analytics" 
+                    colorClass="secondary" 
+                    badgeText="24H" 
+                    subText={<span className="text-secondary text-[14px] flex items-center mb-2"><span className="material-symbols-outlined text-[16px] mr-1">check_circle</span>98%</span>}
+                  />
+                  <KpiCard3D 
+                    title="High-Risk Sites" 
+                    value={kpis.high_risk_sites} 
+                    icon="shield" 
+                    colorClass="tertiary" 
+                    badgeText="YTD" 
+                    subText={<span className="text-on-surface-variant text-[14px] mb-2">Aggregated</span>}
+                  />
+                </div>
+                
+                {/* Mid section: 3D Heatmap + Emerging Patterns */}
+                <div className="flex flex-col xl:flex-row gap-gutter min-h-[600px] z-10 relative">
+                  <Heatmap3D data={heatmap} />
+                  <EmergingPatterns patterns={radar} />
+                </div>
+                
+                {/* Bottom section: Risk Diagnostics */}
+                <RiskDiagnostics />
+              </>
+            )}
+            
+          </div>
+        </main>
+      </div>
+    </>
   );
 }
