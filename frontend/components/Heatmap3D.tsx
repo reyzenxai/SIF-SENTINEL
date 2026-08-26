@@ -20,23 +20,23 @@ export function Heatmap3D({ data }: { data: HeatmapSite[] }) {
   ];
 
   return (
-    <div className="flex-1 bg-surface-container/70 backdrop-blur-xl rounded-xl p-6 flex flex-col relative overflow-hidden shadow-md">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent pointer-events-none"></div>
-      <div className="absolute -top-[1px] -left-[1px] w-full h-full border-t border-l border-white/50 pointer-events-none rounded-xl"></div>
+    <div className="flex-1 bg-surface-container/70 dark:bg-slate-800/80 backdrop-blur-xl rounded-xl p-6 flex flex-col relative overflow-hidden shadow-md dark:shadow-black/50 transition-colors">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent dark:from-white/5 pointer-events-none"></div>
+      <div className="absolute -top-[1px] -left-[1px] w-full h-full border-t border-l border-white/50 dark:border-white/10 pointer-events-none rounded-xl"></div>
       
       <div className="flex justify-between items-center mb-6 relative z-10">
         <div>
-          <h2 className="text-[24px] font-semibold text-on-surface mb-1">Volumetric Risk Heatmap</h2>
-          <p className="text-[14px] text-on-surface-variant">Real-time SIF exposure across zones</p>
+          <h2 className="text-[24px] font-semibold text-on-surface dark:text-slate-100 mb-1">Volumetric Risk Heatmap</h2>
+          <p className="text-[14px] text-on-surface-variant dark:text-slate-400">Real-time SIF exposure across zones</p>
         </div>
         <div className="flex gap-2">
           <button className="px-3 py-1 bg-primary text-on-primary rounded text-[12px] font-bold tracking-wider hover:bg-primary/90 transition-colors">ACTIVE ZONES</button>
         </div>
       </div>
       
-      <div className="flex-1 relative z-10 bg-surface-container-low rounded-lg overflow-hidden group min-h-[300px]">
+      <div className="flex-1 relative z-10 bg-surface-container-low dark:bg-slate-900 rounded-lg overflow-hidden group min-h-[300px]">
         {/* Isometric Grid Background */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(28,96,144,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(28,96,144,0.05)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(28,96,144,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(28,96,144,0.05)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
         
         <div className="absolute inset-0 flex items-center justify-center perspective-[800px]">
           {/* Base Plane */}
@@ -75,17 +75,17 @@ export function Heatmap3D({ data }: { data: HeatmapSite[] }) {
                   <div className={`absolute right-0 w-4 h-full ${colorBase}/60 backdrop-blur-sm transform origin-left rotate-y-[90deg]`}></div>
                   
                   {/* Tooltip on hover */}
-                  <div className="absolute bottom-full mb-6 whitespace-nowrap bg-surface-container-high text-on-surface px-3 py-2 rounded shadow-lg text-[12px] opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none transform -rotate-z-[-45deg] -rotate-x-[-60deg]">
+                  <div className="absolute bottom-full mb-6 whitespace-nowrap bg-surface-container-high dark:bg-slate-700 text-on-surface dark:text-slate-100 px-3 py-2 rounded shadow-lg dark:shadow-black/70 text-[12px] opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none transform -rotate-z-[-45deg] -rotate-x-[-60deg]">
                     <div className="font-bold">{site.site}</div>
                     <div>Score: {site.score}</div>
-                    <div className="text-on-surface-variant">{site.count} reports</div>
+                    <div className="text-on-surface-variant dark:text-slate-400">{site.count} reports</div>
                   </div>
                 </div>
               );
             })}
             
             {data.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center transform -rotate-z-[-45deg] -rotate-x-[60deg] text-on-surface-variant">
+              <div className="absolute inset-0 flex items-center justify-center transform -rotate-z-[-45deg] -rotate-x-[60deg] text-on-surface-variant dark:text-slate-400">
                 No site data available
               </div>
             )}
