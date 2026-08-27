@@ -86,7 +86,11 @@ ACTIVITY_KEYWORDS = {
     "transport": ["driving", "transport", "vehicle movement"],
 }
 
-REPORT_TYPES = ["UNSAFE_ACT", "UNSAFE_CONDITION", "NEAR_MISS"]
+# INCIDENT added for SIH26165 Phase 2: OSHA/NIOSH adapters ingest actual
+# fatality/severe-injury records, which aren't unsafe-act/condition/near-miss
+# reports — they're the "already happened" ground truth the near-miss data
+# is being used to predict toward.
+REPORT_TYPES = ["UNSAFE_ACT", "UNSAFE_CONDITION", "NEAR_MISS", "INCIDENT"]
 
 
 def flatten_ontology():

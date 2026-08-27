@@ -1,0 +1,22 @@
+{
+  "_readme": "This is the ONLY place OIL's real column names should ever be written down. Edit this file once OIL's official export format is known — no code changes required. Left side = canonical schema field, right side = OIL's actual column header. The values below are placeholder guesses based on the SIH26165 brief's own example ('Observation Description' -> report_text, 'Observation Type' -> report_type, 'Area' -> location) and MUST be verified/corrected against the real file before use. You can also override this mapping per-upload via the API without editing this file.",
+
+  "report_text": "Observation Description",
+  "report_type": "Observation Type",
+  "date": "Date",
+  "site": "Site",
+  "location": "Area",
+  "activity": "Activity",
+  "hazard": "Hazard",
+  "unsafe_act": "Unsafe Act",
+  "unsafe_condition": "Unsafe Condition",
+  "barrier_failure": "Control Failure",
+  "potential_consequence": "Potential Consequence",
+  "severity": "Severity",
+  "department": "Department",
+  "contractor": "Contractor",
+  "reporter_role": "Reporter Role",
+
+  "sif_label": "SIF Label",
+  "life_saving_rules": "Life Saving Rule"
+}

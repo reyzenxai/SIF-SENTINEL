@@ -1,7 +1,8 @@
 import csv
 import io
+import json
 import datetime as dt
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 
@@ -14,6 +15,8 @@ from app.services import pipeline, extraction_service, risk_engine
 from app.services.pattern_engine import build_vectors
 from sklearn.metrics.pairwise import cosine_similarity
 from app.core.security import get_current_user
+from app.adapters import get_adapter, available_sources
+from app.adapters.io_utils import parse_upload
 
 router = APIRouter()
 
@@ -91,6 +94,14 @@ def list_reports(
     return {"reports": results, "total": total, "page": page, "size": size}
 
 
+@router.get("/sources")
+def list_sources(current_user: dict = Depends(get_current_user)):
+    """List available data-source adapters (SIH26165 Phase 2). Registered
+    ABOVE /{report_id} deliberately — route order matters in FastAPI, and a
+    literal path registered after a path-param route gets swallowed by it."""
+    return {"sources": available_sources()}
+
+
 @router.get("/{report_id}")
 def get_report(report_id: str, db: Session = Depends(get_db)):
     report = db.query(SafetyReport).filter_by(id=report_id).first()
@@ -152,6 +163,8 @@ def get_report(report_id: str, db: Session = Depends(get_db)):
             "overall_sif_score": assessment.overall_sif_score,
             "risk_level": assessment.risk_level,
             "reasoning": assessment.reasoning,
+            "sif_label": assessment.sif_label,
+            "sif_confidence": assessment.sif_confidence,
         } if assessment else None,
         "patterns": patterns,
         "recommendations": recs,
@@ -241,6 +254,75 @@ def upload_reports(
     return {
         "message": "Reports uploaded. Processing in the background...",
         "reports_queued": len(reports_data),
+    }
+
+
+@router.post("/upload/{source}")
+def upload_reports_via_adapter(
+    source: str,
+    file: UploadFile = File(...),
+    column_mapping: str | None = Form(
+        default=None,
+        description="Optional JSON object overriding this source's default column mapping, "
+                    "e.g. {\"report_text\": \"Observation Description\"}",
+    ),
+    current_user: dict = Depends(get_current_user),
+    background_tasks: BackgroundTasks = None,
+):
+    """
+    Multi-source ingestion endpoint (SIH26165 Phase 2). Unlike the legacy
+    /upload route (kept as-is for backward compatibility), this route routes
+    the upload through the adapter layer, so any registered source — synthetic,
+    osha, niosh, or oil — can be ingested through one endpoint without the API
+    or ML pipeline needing to know that source's column names.
+
+    For the OIL source specifically: if OIL's real export uses different
+    column headers than backend/app/adapters/oil_column_mapping.json, pass
+    `column_mapping` to override per-upload instead of editing that file.
+    """
+    try:
+        adapter = get_adapter(source)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    mapping_override = None
+    if column_mapping:
+        try:
+            mapping_override = json.loads(column_mapping)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="column_mapping must be valid JSON")
+
+    try:
+        raw_bytes = file.file.read()
+        rows = parse_upload(file.filename, raw_bytes)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    try:
+        canonical_reports = adapter.adapt_rows(rows, column_mapping=mapping_override)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Adapter failed to process rows: {exc}")
+
+    if not canonical_reports:
+        raise HTTPException(
+            status_code=400,
+            detail="No usable reports found after adapting — check that report_text is correctly "
+                   "mapped for this source (see column_mapping).",
+        )
+
+    reports_data = [c.to_legacy_ingest_dict() for c in canonical_reports]
+    is_synthetic = (adapter.source_name == "synthetic")
+
+    if background_tasks is not None:
+        background_tasks.add_task(_background_pipeline_runner, reports_data, is_synthetic)
+    else:
+        _background_pipeline_runner(reports_data, is_synthetic)
+
+    return {
+        "message": f"Reports ingested via '{adapter.source_name}' adapter. Processing in the background...",
+        "source": adapter.source_name,
+        "reports_queued": len(reports_data),
+        "rows_skipped": len(rows) - len(canonical_reports),
     }
 
 

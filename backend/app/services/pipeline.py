@@ -8,6 +8,7 @@ from app.models.database import (
     ReportPatternLink, RecommendedAction
 )
 from app.services import extraction_service, risk_engine, pattern_engine, action_engine
+from app.ml import predict_service as sif_classifier
 
 
 def ingest_report(db: Session, report_data: dict, is_synthetic=True) -> SafetyReport:
@@ -23,6 +24,7 @@ def ingest_report(db: Session, report_data: dict, is_synthetic=True) -> SafetyRe
         severity=report_data.get("severity", "UNKNOWN"),
         is_synthetic=is_synthetic,
         planted_pattern=report_data.get("planted_pattern"),
+        source_system=report_data.get("source_system", "manual"),
     )
     db.add(report)
     db.flush()
@@ -53,6 +55,7 @@ def extract_and_assess_report(db: Session, report: SafetyReport, similar_count: 
     db.flush()
 
     assessment_result = risk_engine.assess(extraction_result, similar_report_count=similar_count)
+    sif_prediction = sif_classifier.predict(report.description)  # None until a model is trained (Phase 4)
     assessment = SIFAssessment(
         report_id=report.id,
         severity_score=assessment_result["severity_score"],
@@ -63,6 +66,8 @@ def extract_and_assess_report(db: Session, report: SafetyReport, similar_count: 
         overall_sif_score=assessment_result["overall_sif_score"],
         risk_level=assessment_result["risk_level"],
         reasoning=assessment_result["reasoning"],
+        sif_label=sif_prediction.sif_label if sif_prediction else None,
+        sif_confidence=sif_prediction.sif_probability if sif_prediction else None,
     )
     db.add(assessment)
     db.flush()

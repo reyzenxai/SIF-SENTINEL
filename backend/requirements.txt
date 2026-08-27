@@ -3,8 +3,11 @@ uvicorn[standard]
 sqlalchemy
 pydantic
 scikit-learn
+xgboost
+joblib
 numpy
 pandas
+openpyxl
 python-multipart
 psycopg2-binary
 pgvector

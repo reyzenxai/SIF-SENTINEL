@@ -34,3 +34,19 @@ CLUSTER_MIN_SAMPLES = 3
 CLUSTER_EPS = 0.55  # cosine-distance DBSCAN epsilon over TF-IDF vectors
 
 CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+# Data adapter layer (SIH26165 Phase 2). OIL's real column headers are
+# unknown until they deliver official data — this file is the single place
+# that mapping lives, so it can be edited without touching any code. See
+# app/adapters/oil.py and app/adapters/oil_column_mapping.json.
+ADAPTERS_DIR = Path(__file__).resolve().parent.parent / "adapters"
+OIL_COLUMN_MAPPING_PATH = os.environ.get(
+    "OIL_COLUMN_MAPPING_PATH",
+    str(ADAPTERS_DIR / "oil_column_mapping.json"),
+)
+
+# SIF classifier model registry (SIH26165 Phase 4). Trained model artifacts
+# and their manifest (dataset version, model version, metrics, label
+# definitions) live here. See app/ml/registry.py.
+MODELS_DIR = DATA_DIR / "models"
+MODELS_DIR.mkdir(exist_ok=True)

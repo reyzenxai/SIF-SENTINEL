@@ -19,5 +19,18 @@ class LoginIn(BaseModel):
     password: str
 
 
+class AnnotationIn(BaseModel):
+    """SIH26165 Phase 13: a human HSE reviewer's label for a report."""
+    sif_label: str  # SIF | NON_SIF | UNCERTAIN
+    life_saving_rules: List[str] = []
+    activity: Optional[str] = None
+    hazard: Optional[str] = None
+    unsafe_act: Optional[str] = None
+    unsafe_condition: Optional[str] = None
+    barrier_failure: Optional[str] = None
+    potential_consequence: Optional[str] = None
+    notes: Optional[str] = None
+
+
 class Config:
     orm_mode = True
