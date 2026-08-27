@@ -51,6 +51,8 @@ export function AppHeader() {
           <span className="material-symbols-outlined text-on-surface-variant dark:text-slate-300">notifications</span>
           <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
         </button>
+        <button className="p-2 rounded-full hover:bg-surface-container-high dark:hover:bg-slate-800 transition-colors">
+          <span className="material-symbols-outlined text-on-surface-variant dark:text-slate-300">settings</span>
         </button>
       </div>
     </header>

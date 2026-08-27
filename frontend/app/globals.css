@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@source "../app";
+@source "../components";
+@source "../lib";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-secondary: #006a6a;
