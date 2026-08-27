@@ -7,10 +7,11 @@ export function AppSidebar() {
 
   const links = [
     { name: "Dashboard", href: "/dashboard", icon: "dashboard" },
-    { name: "Risk Mapping", href: "#", icon: "map" },
-    { name: "AI Analytics", href: "#", icon: "psychology" },
+    { name: "Risk Mapping 3D", href: "/risk-mapping", icon: "map" },
+    { name: "AI Analytics & ML", href: "/analytics", icon: "psychology" },
     { name: "Incident Reports", href: "/reports", icon: "description" },
-    { name: "Safety Controls", href: "#", icon: "emergency_home" },
+    { name: "Precursor Patterns", href: "/patterns", icon: "hub" },
+    { name: "Safety Controls", href: "/controls", icon: "emergency_home" },
   ];
 
   return (
@@ -44,6 +45,8 @@ export function AppSidebar() {
             <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
           </div>
           <div className="overflow-hidden">
+            <p className="text-[14px] font-semibold text-on-surface dark:text-slate-100 truncate">Safety Officer</p>
+            <p className="text-[12px] uppercase tracking-wider text-on-surface-variant dark:text-slate-400">Command Admin</p>
           </div>
         </div>
       </div>
